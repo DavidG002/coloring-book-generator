@@ -19,7 +19,9 @@ coloring-book-generator/
 ├── venv/                # Virtual environment (gitignored)
 ├── .env                 # API key (gitignored)
 └── README.md
-text## Setup
+
+
+## Setup
 
 ```bash
 python -m venv venv
@@ -27,7 +29,9 @@ source venv/bin/activate
 pip install -r requirements.txt
 Create a .env file with your OpenAI API key:
 envOPENAI_API_KEY=sk-proj-your-key-here
+
 Usage
+
 Generate Images
 Bash# Generate 2 new unique T-Rex images
 python generate_pages.py --category dinosaurs --subject "T-Rex" --new-variations 2
@@ -38,39 +42,6 @@ python generate_pages.py --category dinosaurs --new-variations 3 --max-images 50
 # Preview before generating (recommended)
 python generate_pages.py --category dinosaurs --new-variations 3 --dry-run
 Recommended Limits
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 Daily GoalRecommended ApproachCommand ExampleNotesNormal daily work30 – 50 images per run--max-images 50ComfortableBuilding fast2 × 50 images per dayRun twice with --max-images 50Good balanceLarge batchesMax 70–80 images per run--max-images 70AcceptableFirst time new categoryAlways use --dry-run first--dry-runSafety
