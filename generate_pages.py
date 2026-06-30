@@ -18,18 +18,8 @@ OUTPUT_DIR = "output"
 PROMPTS_DIR = "prompts"
 
 # --- PNG size/quality tuning ---
-# GPT-image output has faint compression noise scattered across the whole
-# canvas (not just at line edges), which is invisible to the eye but hurts
-# PNG compression badly. We snap near-white and near-black pixels to pure
-# white/black to kill that noise, while leaving genuine anti-aliasing near
-# line edges (values between the two thresholds) untouched so curves stay
-# smooth instead of jagged.
 WHITE_CLEAN_THRESHOLD = 245  # pixels brighter than this -> pure white (255)
 BLACK_CLEAN_THRESHOLD = 10   # pixels darker than this -> pure black (0)
-
-# Number of colors in the final adaptive palette. 8 keeps a thin smooth
-# anti-aliased edge around lines while staying small. Drop to 4 for an even
-# smaller file with slightly less edge smoothness.
 PALETTE_COLORS = 8
 
 DEFAULT_BASE_PROMPT = (
@@ -43,13 +33,63 @@ DEFAULT_BASE_PROMPT = (
     "Print-ready line art. "
 )
 
+# --- Fallback variation modifiers ---
+# Used only when a category's prompt file has no VARIATIONS: section.
+# If your category is not an animal/character, define VARIATIONS: in its
+# own prompts/{category}.txt instead so poses make sense for that subject.
+DEFAULT_VARIATION_MODIFIERS = [
+    "facing left, full body side view, walking pose, curious expression",
+    "facing right, full body side view, roaring with mouth wide open, excited",
+    "front-facing, sitting down, big friendly smile, arms out",
+    "three-quarter view from above, looking up at the sky, surprised expression",
+    "full body, running pose, leaning forward with speed, determined look",
+    "rear three-quarter view, looking back over shoulder with a cheeky grin",
+    "low angle view, standing tall and proud, chest out, heroic pose",
+    "full body, sleeping or resting, eyes closed, curled up peacefully",
+    "jumping or leaping, all four limbs in the air, joyful expression",
+    "full body, waving one arm at the viewer, big happy grin",
+    "side view, head tilted down sniffing the ground, playful pose",
+    "front-facing, arms crossed, pretending to look tough but still cute",
+]
+
 
 def get_category_prompt(category_name):
+    """
+    Read the category prompt file and return (base_prompt, variation_modifiers).
+
+    The prompt file can optionally contain a VARIATIONS: section after the
+    base prompt, like this:
+
+        Simple black and white coloring page...
+        ...rest of base prompt...
+
+        VARIATIONS:
+        facing left, walking, curious expression
+        front-facing, sitting, big smile
+        ...
+
+    If no VARIATIONS: section is found, falls back to DEFAULT_VARIATION_MODIFIERS.
+    If no prompt file exists at all, falls back to DEFAULT_BASE_PROMPT and
+    DEFAULT_VARIATION_MODIFIERS.
+    """
     prompt_path = os.path.join(PROMPTS_DIR, f"{category_name}.txt")
-    if os.path.exists(prompt_path):
-        with open(prompt_path, "r", encoding="utf-8") as f:
-            return f.read().strip()
-    return DEFAULT_BASE_PROMPT
+    if not os.path.exists(prompt_path):
+        return DEFAULT_BASE_PROMPT, DEFAULT_VARIATION_MODIFIERS
+
+    with open(prompt_path, "r", encoding="utf-8") as f:
+        content = f.read()
+
+    if "VARIATIONS:" in content:
+        parts = content.split("VARIATIONS:", 1)
+        base_prompt = parts[0].strip()
+        modifiers = [
+            line.strip()
+            for line in parts[1].strip().splitlines()
+            if line.strip()
+        ]
+        return base_prompt, modifiers
+    else:
+        return content.strip(), DEFAULT_VARIATION_MODIFIERS
 
 
 def get_subjects_from_file(filepath):
@@ -75,6 +115,14 @@ def get_next_variation_number(category_dir, subject):
     return max(numbers) + 1 if numbers else 1
 
 
+def get_variation_modifier(variation_num, modifiers):
+    """
+    Pick a modifier from the list by cycling through it using the variation
+    number. variation_num is 1-based so we subtract 1 before the modulo.
+    """
+    return modifiers[(variation_num - 1) % len(modifiers)]
+
+
 def generate_image(prompt, output_path):
     try:
         response = client.images.generate(
@@ -93,14 +141,10 @@ def generate_image(prompt, output_path):
         canvas_height = 842
 
         # Keep subject at 50%
-        max_subject_size = int(canvas_height * 0.70)
+        max_subject_size = int(canvas_height * 0.50)
         image.thumbnail((max_subject_size, max_subject_size), Image.LANCZOS)
 
         # --- Noise cleanup + small palette (smooth edges, small file) ---
-        # Snap near-white/near-black pixels to pure white/black to kill the
-        # invisible compression noise that bloats PNG size, but leave the
-        # real anti-aliasing band right around line edges untouched so
-        # curves stay smooth instead of jagged like a hard 1-bit threshold.
         gray = image.convert("L")
         clean_lut = [
             0 if v < BLACK_CLEAN_THRESHOLD else (255 if v > WHITE_CLEAN_THRESHOLD else v)
@@ -108,15 +152,11 @@ def generate_image(prompt, output_path):
         ]
         cleaned_subject = gray.point(clean_lut, mode="L")
 
-        # Paste onto a clean white A4 canvas (still grayscale at this point)
         canvas = Image.new("L", (canvas_width, canvas_height), 255)
         x = (canvas_width - cleaned_subject.width) // 2
         y = (canvas_height - cleaned_subject.height) // 2
         canvas.paste(cleaned_subject, (x, y))
 
-        # Quantize to a small adaptive palette with NO dithering. Dithering
-        # would reintroduce scattered noise across flat areas and bloat the
-        # file right back up.
         new_image = canvas.convert(
             "P", palette=Image.ADAPTIVE, colors=PALETTE_COLORS, dither=Image.NONE
         )
@@ -143,7 +183,7 @@ def main():
     parser.add_argument("--max-images", type=int, default=None,
                         help="Maximum number of images to generate")
     parser.add_argument("--dry-run", action="store_true",
-                        help="Preview what will be generated")
+                        help="Preview what will be generated, including which pose modifier each image will use")
 
     args = parser.parse_args()
 
@@ -164,13 +204,13 @@ def main():
         category_output_dir = os.path.join(OUTPUT_DIR, category_name)
         os.makedirs(category_output_dir, exist_ok=True)
 
-        base_prompt = get_category_prompt(category_name)
+        base_prompt, modifiers = get_category_prompt(category_name)
 
         for subject in subjects:
             next_var = get_next_variation_number(category_output_dir, subject)
             for i in range(args.new_variations):
                 variation_num = next_var + i
-                tasks.append((category_name, subject, variation_num, base_prompt))
+                tasks.append((category_name, subject, variation_num, base_prompt, modifiers))
 
     if args.max_images:
         tasks = tasks[:args.max_images]
@@ -178,8 +218,9 @@ def main():
     print(f"\nPlanned generations: {len(tasks)}")
 
     if args.dry_run:
-        for cat, subj, var_num, _ in tasks:
-            print(f"  → {cat} / {subj}_v{var_num:03d}.png")
+        for cat, subj, var_num, _, modifiers in tasks:
+            modifier = get_variation_modifier(var_num, modifiers)
+            print(f"  → {cat} / {subj}_v{var_num:03d}.png  [{modifier}]")
         print("\nDry run complete.")
         return
 
@@ -189,14 +230,15 @@ def main():
             print("Cancelled.")
             return
 
-    for category_name, subject, variation_num, base_prompt in tqdm(tasks, desc="Generating"):
+    for category_name, subject, variation_num, base_prompt, modifiers in tqdm(tasks, desc="Generating"):
         category_output_dir = os.path.join(OUTPUT_DIR, category_name)
         os.makedirs(category_output_dir, exist_ok=True)
 
         filename = f"{subject.lower().replace(' ', '_')}_v{variation_num:03d}.png"
         output_path = os.path.join(category_output_dir, filename)
 
-        prompt = base_prompt + f" Cute {subject}."
+        modifier = get_variation_modifier(variation_num, modifiers)
+        prompt = base_prompt + f" Cute {subject}. {modifier}."
         success = generate_image(prompt, output_path)
 
         if success:

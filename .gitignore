@@ -24,3 +24,10 @@ output/*
 # Published files — ignore everything inside, but keep the folder itself
 publish/*
 !publish/.gitkeep
+
+categories/*
+!categories/dinosaurs.txt
+
+translations/*/*
+!translations/dinosaurs/
+!translations/dinosaurs/he.json
