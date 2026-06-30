@@ -17,15 +17,24 @@ CATEGORIES_DIR = "categories"
 OUTPUT_DIR = "output"
 PROMPTS_DIR = "prompts"
 
-# Pixel value (0-255, after grayscale conversion) above which a pixel is
-# treated as "white". Anything at or below this becomes pure black.
-# 200 worked well in testing; raise it slightly (e.g. 210-220) if thin lines
-# look too thick, lower it (e.g. 180-190) if curves look jagged.
-BW_THRESHOLD = 200
+# --- PNG size/quality tuning ---
+# GPT-image output has faint compression noise scattered across the whole
+# canvas (not just at line edges), which is invisible to the eye but hurts
+# PNG compression badly. We snap near-white and near-black pixels to pure
+# white/black to kill that noise, while leaving genuine anti-aliasing near
+# line edges (values between the two thresholds) untouched so curves stay
+# smooth instead of jagged.
+WHITE_CLEAN_THRESHOLD = 245  # pixels brighter than this -> pure white (255)
+BLACK_CLEAN_THRESHOLD = 10   # pixels darker than this -> pure black (0)
+
+# Number of colors in the final adaptive palette. 8 keeps a thin smooth
+# anti-aliased edge around lines while staying small. Drop to 4 for an even
+# smaller file with slightly less edge smoothness.
+PALETTE_COLORS = 8
 
 DEFAULT_BASE_PROMPT = (
     "Simple black and white coloring page for children ages 3 to 10. "
-    "Large dinosaur as the main subject with clean black outlines, not too thick. "
+    "Large main subject that fills most of the page with thick bold black outlines. "
     "Very minimal details and clean shapes that are easy to color. "
     "Large centered object with lots of white space around it. "
     "Minimal or no background. Clean white background. "
@@ -84,32 +93,39 @@ def generate_image(prompt, output_path):
         canvas_height = 842
 
         # Keep subject at 50%
-        max_subject_size = int(canvas_height * 0.50)
+        max_subject_size = int(canvas_height * 0.70)
         image.thumbnail((max_subject_size, max_subject_size), Image.LANCZOS)
 
-        # --- Bilevel (true black/white) conversion ---
-        # GPT-image output has anti-aliased gray edge pixels. Quantizing those
-        # to an 8-color adaptive palette (the old approach) keeps a lot of
-        # scattered near-white/near-black noise around every line, which
-        # bloats the PNG. Thresholding to pure black-or-white first gives
-        # large flat runs that PNG compression handles far more efficiently,
-        # at the cost of slightly harder (non-anti-aliased) edges.
+        # --- Noise cleanup + small palette (smooth edges, small file) ---
+        # Snap near-white/near-black pixels to pure white/black to kill the
+        # invisible compression noise that bloats PNG size, but leave the
+        # real anti-aliasing band right around line edges untouched so
+        # curves stay smooth instead of jagged like a hard 1-bit threshold.
         gray = image.convert("L")
-        bw_subject = gray.point(lambda p: 255 if p > BW_THRESHOLD else 0, mode="L").convert("1")
+        clean_lut = [
+            0 if v < BLACK_CLEAN_THRESHOLD else (255 if v > WHITE_CLEAN_THRESHOLD else v)
+            for v in range(256)
+        ]
+        cleaned_subject = gray.point(clean_lut, mode="L")
 
-        # Create white canvas in mode "1" (1-bit: 0=black, 1=white in PIL's "1" mode terms,
-        # but point() above already maps to 0/255 in "L" before convert("1"), so use a
-        # plain white background and paste the thresholded subject onto it).
-        new_image = Image.new("1", (canvas_width, canvas_height), 1)
-        x = (canvas_width - bw_subject.width) // 2
-        y = (canvas_height - bw_subject.height) // 2
-        new_image.paste(bw_subject, (x, y))
+        # Paste onto a clean white A4 canvas (still grayscale at this point)
+        canvas = Image.new("L", (canvas_width, canvas_height), 255)
+        x = (canvas_width - cleaned_subject.width) // 2
+        y = (canvas_height - cleaned_subject.height) // 2
+        canvas.paste(cleaned_subject, (x, y))
 
-        # Save as 1-bit PNG with max compression
+        # Quantize to a small adaptive palette with NO dithering. Dithering
+        # would reintroduce scattered noise across flat areas and bloat the
+        # file right back up.
+        new_image = canvas.convert(
+            "P", palette=Image.ADAPTIVE, colors=PALETTE_COLORS, dither=Image.NONE
+        )
+
         new_image.save(
             output_path,
             "PNG",
             optimize=True,
+            compress_level=9,
         )
 
         return True

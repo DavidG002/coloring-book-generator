@@ -4,9 +4,6 @@ venv/
 # Environment variables (contains your API key)
 .env
 
-# Generated images (you probably don't want to commit thousands of images)
-output/
-
 # Python cache
 __pycache__/
 *.py[cod]
@@ -19,3 +16,11 @@ __pycache__/
 # OS files
 .DS_Store
 Thumbs.db
+
+# Generated output — ignore everything inside, but keep the folder itself
+output/*
+!output/.gitkeep
+
+# Published files — ignore everything inside, but keep the folder itself
+publish/*
+!publish/.gitkeep

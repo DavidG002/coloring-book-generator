@@ -1,0 +1,18 @@
+{
+  "_category": "דינוזאור",
+  "_filename_template": "דף-צביעה-{category}-{item}",
+  "_alt_template": "דף צביעה {category} {item} להדפסה חינם",
+  "_title_template": "דף צביעה {category} {item}",
+  "items": {
+    "T-Rex": "טי רקס",
+    "Triceratops": "טריצרטופס",
+    "Stegosaurus": "סטגוזאורוס",
+    "Brachiosaurus": "ברכיוזאורוס",
+    "Velociraptor": "ולוסירפטור",
+    "Pterodactyl": "פטרודקטיל",
+    "Spinosaurus": "ספינוזאורוס",
+    "Ankylosaurus": "אנקילוזאורוס",
+    "Parasaurolophus": "פרזאורולופוס",
+    "Dilophosaurus": "דילופוזאורוס"
+  }
+}
