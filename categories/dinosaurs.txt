@@ -1,0 +1,10 @@
+T-Rex
+Triceratops
+Stegosaurus
+Brachiosaurus
+Velociraptor
+Pterodactyl
+Spinosaurus
+Ankylosaurus
+Parasaurolophus
+Dilophosaurus

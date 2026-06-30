@@ -1,0 +1,21 @@
+# Virtual environment
+venv/
+
+# Environment variables (contains your API key)
+.env
+
+# Generated images (you probably don't want to commit thousands of images)
+output/
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# IDE / Editor folders
+.vscode/
+.idea/
+
+# OS files
+.DS_Store
+Thumbs.db
