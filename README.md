@@ -1,4 +1,3 @@
-Markdown
 # Coloring Book Page Generator
 
 A Python tool to generate simple, minimal coloring book pages for children (ages 3–10) using OpenAI's image generation.
@@ -22,23 +21,31 @@ coloring-book-generator/
 ├── venv/                # Virtual environment (gitignored)
 ├── .env                 # API key (gitignored)
 └── README.md
-Setup
-Create and activate a virtual environment:
+```
 
-Bash
-python -m venv venv
-source venv/bin/activate
-Install dependencies:
+## Setup
 
-Bash
-pip install -r requirements.txt
-Create a .env file with your OpenAI API key:
+1. Create and activate a virtual environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate
+   ```
 
-Code snippet
-OPENAI_API_KEY=sk-proj-your-key-here
-Usage
-Generate Images
-Bash
+2. Install dependencies:
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+3. Create a `.env` file with your OpenAI API key:
+   ```env
+   OPENAI_API_KEY=sk-proj-your-key-here
+   ```
+
+## Usage
+
+### Generate Images
+
+```bash
 # Generate 2 new unique T-Rex images
 python generate_pages.py --category dinosaurs --subject "T-Rex" --new-variations 2
 
@@ -47,46 +54,49 @@ python generate_pages.py --category dinosaurs --new-variations 3 --max-images 50
 
 # Preview before generating (recommended)
 python generate_pages.py --category dinosaurs --new-variations 3 --dry-run
-Recommended Limits
-Normal daily work: Use --max-images 50
+```
 
-Building fast: Run 2 batches of 50 per day
+### Recommended Limits
 
-Large volume: Maximum 70–80 images per run
+* **Normal daily work:** Use `--max-images 50`
+* **Building fast:** Run 2 batches of 50 per day
+* **Large volume:** Maximum 70–80 images per run
+* **New category:** Always start with `--dry-run` first
 
-New category: Always start with --dry-run first
+> **Tip:** Even if cost is not an issue, splitting large amounts into smaller batches makes it easier to check quality.
 
-Tip: Even if cost is not an issue, splitting large amounts into smaller batches makes it easier to check quality.
+### Creating a New Category
 
-Creating a New Category
-Create a new file in the categories/ folder:
+1. Create a new file in the `categories/` folder:
+   ```bash
+   touch categories/vehicles.txt
+   ```
 
-Bash
-touch categories/vehicles.txt
-Add one subject per line inside vehicles.txt:
+2. Add one subject per line inside `vehicles.txt`:
+   ```text
+   Car
+   Truck
+   Airplane
+   Boat
+   ```
 
-Plaintext
-Car
-Truck
-Airplane
-Boat
-(Optional but recommended) Create a matching prompt file:
+3. *(Optional but recommended)* Create a matching prompt file:
+   ```bash
+   touch prompts/vehicles.txt
+   ```
 
-Bash
-touch prompts/vehicles.txt
-How It Works
-Images are generated at high resolution, then resized and centered on a 595×842 canvas (A4 at 96 DPI).
+## How It Works
 
-Uses 1-bit thresholding to keep file sizes very small.
+* Images are generated at high resolution, then resized and centered on a 595×842 canvas (A4 at 96 DPI).
+* Uses 1-bit thresholding to keep file sizes very small.
+* Each run automatically continues from the next variation number.
+* Category-specific prompts are loaded from the `prompts/` folder when available.
 
-Each run automatically continues from the next variation number.
+## Notes
 
-Category-specific prompts are loaded from the prompts/ folder when available.
+* You can adjust `BW_THRESHOLD` in the script if lines appear too thick or jagged.
+* The `output/` folder is gitignored by default.
 
-Notes
-You can adjust BW_THRESHOLD in the script if lines appear too thick or jagged.
+## License
 
-The output/ folder is gitignored by default.
-
-License
 MIT
