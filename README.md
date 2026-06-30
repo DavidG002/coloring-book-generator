@@ -1,53 +1,39 @@
-# Coloring Book Page Generator
-
+Coloring Book Page Generator
 A Python tool to generate simple, minimal coloring book pages for children (ages 3–10) using OpenAI's image generation.
+Features
 
-## Features
+Generates very small PNG files (~4–15 KB)
+Outputs images sized for A4 (595×842 pixels at 96 DPI)
+Supports multiple categories with separate prompt files
+Automatic unique variation numbering (subject_v001.png, subject_v002.png...)
+Command-line control with safety features
 
-- Generates very small PNG files (~4–15 KB)
-- Outputs images sized for A4 (595×842 pixels at 96 DPI)
-- Supports multiple categories with separate prompt files
-- Automatic unique variation numbering (`subject_v001.png`, `subject_v002.png`...)
-- Command-line control for daily generation
-- Safety features (`--max-images`, `--dry-run`, confirmation prompts)
-
-## Project Structure
-coloring-book-generator/
-├── generate_pages.py          # Main generation script
-├── categories/                # One .txt file per category
-│   └── dinosaurs.txt
-├── prompts/                   # Category-specific prompts
-│   └── dinosaurs.txt
-├── output/                    # Generated images (gitignored)
-├── venv/                      # Virtual environment (gitignored)
-├── .env                       # API key (gitignored)
-├── .gitignore
+Project Structure
+textcoloring-book-generator/
+├── generate_pages.py
+├── categories/          # One .txt file per category
+├── prompts/             # Category-specific prompts (optional)
+├── output/              # Generated images (gitignored)
+├── venv/                # Virtual environment (gitignored)
+├── .env                 # API key (gitignored)
 └── README.md
-text## Setup
-
-1. Clone the repository
-2. Create and activate a virtual environment:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate
-
-Install dependencies:Bashpip install -r requirements.txt
-Create a .env file with your OpenAI API key:envOPENAI_API_KEY=sk-proj-your-key-here
-
+Setup
+Bashpython -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt
+Create a .env file with your OpenAI API key:
+envOPENAI_API_KEY=sk-proj-your-key-here
 Usage
-Basic Examples
-Bash# Generate 2 new unique T-Rex variations
+Generate Images
+Bash# Generate 2 new unique T-Rex images
 python generate_pages.py --category dinosaurs --subject "T-Rex" --new-variations 2
 
-# Generate maximum 10 images from the dinosaurs category
-python generate_pages.py --category dinosaurs --new-variations 2 --max-images 10
+# Generate up to 50 images from dinosaurs category
+python generate_pages.py --category dinosaurs --new-variations 3 --max-images 50
 
-# Preview what would be generated (dry run)
-python generate_pages.py --category dinosaurs --new-variations 2 --dry-run
-
-# Generate from all categories
-python generate_pages.py
-Useful Flags
+# Preview before generating (recommended)
+python generate_pages.py --category dinosaurs --new-variations 3 --dry-run
+Recommended Limits
 
 
 
@@ -83,19 +69,27 @@ Useful Flags
 
 
 
-FlagDescriptionExample--categoryGenerate from a specific category--category dinosaurs--subjectGenerate only for one subject--subject "T-Rex"--new-variationsNumber of new unique images per subject--new-variations 3--max-imagesHard limit on total images generated--max-images 15--dry-runPreview without generating--dry-run
+Daily GoalRecommended ApproachCommand ExampleNotesNormal daily work30 – 50 images per run--max-images 50ComfortableBuilding fast2 × 50 images per dayRun twice with --max-images 50Good balanceLarge batchesMax 70–80 images per run--max-images 70AcceptableFirst time new categoryAlways use --dry-run first--dry-runSafety
+Tip: Even if cost is not an issue, splitting large amounts into multiple runs (e.g. 2 × 50) makes it easier to check quality.
+Creating a New Category
+
+Create a new file in the categories/ folder:Bashtouch categories/vehicles.txt
+Add one subject per line:txtCar
+Truck
+Airplane
+Boat
+(Optional but recommended) Create a matching prompt file:Bashtouch prompts/vehicles.txt
+
 How It Works
 
-Images are generated at 1024×1024 then resized and centered on a 595×842 canvas (A4 at 96 DPI).
-Uses 1-bit thresholding for extremely small file sizes.
-Each new run automatically continues from the next variation number.
+Images are generated at high resolution, then resized and centered on a 595×842 canvas (A4 at 96 DPI).
+Uses 1-bit thresholding to keep file sizes very small.
+Each run automatically continues from the next variation number.
 Category-specific prompts are loaded from the prompts/ folder when available.
 
 Notes
 
-File sizes are kept very small (~4–15 KB) for easy web hosting.
 You can adjust BW_THRESHOLD in the script if lines appear too thick or jagged.
 The output/ folder is gitignored by default.
 
 License
-MIT

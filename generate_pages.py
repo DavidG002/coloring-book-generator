@@ -25,7 +25,7 @@ BW_THRESHOLD = 200
 
 DEFAULT_BASE_PROMPT = (
     "Simple black and white coloring page for children ages 3 to 10. "
-    "Large main subject that fills most of the page with thick bold black outlines. "
+    "Large dinosaur as the main subject with clean black outlines, not too thick. "
     "Very minimal details and clean shapes that are easy to color. "
     "Large centered object with lots of white space around it. "
     "Minimal or no background. Clean white background. "
