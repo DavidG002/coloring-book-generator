@@ -201,6 +201,59 @@ Each publish folder gets a `manifest.csv` with one row per image:
 
 The manifest is rebuilt in full on every run — it always reflects the current complete state of the publish folder, not just the newest additions. Re-running after adding new images is safe; existing files are overwritten with identical content.
 
+### Uploading to WordPress
+
+Once the publish script has run, the `publish/he/{category}/` folder contains everything needed to upload to WordPress. There are two ways to do this depending on your preference.
+
+**Option A — Manual upload (simplest)**
+
+Open `manifest.csv` in Excel or Google Sheets alongside your WordPress Media Library. For each row:
+
+1. Upload the image file from `publish/he/{category}/` to the WordPress Media Library
+2. Once uploaded, click the image in the Media Library and fill in:
+   - **Alt Text** → paste from the `alt_text` column
+   - **Title** → paste from the `title` column
+3. Attach the image to the relevant page or post
+
+This works well for smaller batches and requires no plugins.
+
+**Option B — Bulk import with WP All Import (recommended for large batches)**
+
+[WP All Import](https://www.wpallimport.com/) is a WordPress plugin that can import images and their metadata in bulk from a CSV file.
+
+1. Install and activate the **WP All Import** plugin on your WordPress site
+2. Upload all the images from `publish/he/{category}/` to your Media Library first (you can drag and drop multiple files at once in the Media Library)
+3. In WP All Import, create a new import using the `manifest.csv` file
+4. Map the CSV columns to WordPress fields:
+   - `filename` → identifies the media file
+   - `alt_text` → Image Alt Text
+   - `title` → Image Title
+5. Run the import
+
+> **Tip:** The `manifest.csv` uses UTF-8 encoding with a BOM so Hebrew characters display correctly when opening in Excel. If characters look broken, make sure Excel is reading it as UTF-8.
+
+### Before adding a new category — check the live site first
+
+Before creating a new translation JSON, always check the target website for an existing coloring page in a similar category. This ensures your filenames, alt text, and category names match the phrasing the site already uses — which is what search engines already associate with the site.
+
+**What to look for on the site:**
+
+1. **URL slug** — open an existing coloring page and look at the URL. For example:
+   
+   This tells you the exact Hebrew phrasing for that category in filenames
+
+2. **Page title and headings** — the H1 or page title usually contains the canonical phrasing, e.g. 
+
+3. **Image alt text** — right-click an existing coloring page image → Inspect, and check the  attribute. This is the exact format to replicate in your 
+
+**Then build your JSON to match:**
+
+If the site uses  in URLs and  in alt text, your  should reflect that exactly — not a guess at what sounds right.
+
+> This step takes 5 minutes and makes a real difference to SEO. Do it before writing the JSON, not after.
+
+---
+
 ### Adding a new language
 
 1. Create a translation file for each category:
